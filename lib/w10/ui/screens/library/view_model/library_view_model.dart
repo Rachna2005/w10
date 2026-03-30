@@ -36,6 +36,41 @@ class LibraryViewModel extends ChangeNotifier {
     fetchSong();
   }
 
+Future<void> likeSong(Song song) async {
+    try {
+      await songRepository.likeSong(song);
+
+      final current = data.data!;
+
+      final List<LibraryItemData> updated = [];
+
+      for (final item in current) {
+        if (item.song.id == song.id) {
+          updated.add(
+            LibraryItemData(
+              song: Song(
+                id: item.song.id,
+                title: item.song.title,
+                artistId: item.song.artistId,
+                duration: item.song.duration,
+                imageUrl: item.song.imageUrl,
+                likes: item.song.likes + 1,
+              ),
+              artist: item.artist,
+            ),
+          );
+        } else {
+          updated.add(item);
+        }
+      }
+
+      data = AsyncValue.success(updated);
+      notifyListeners();
+    } catch (e) {
+      data = AsyncValue.error(e);
+    }
+  }
+
   void fetchSong() async {
     // 1- Loading state
     data = AsyncValue.loading();
@@ -62,7 +97,6 @@ class LibraryViewModel extends ChangeNotifier {
           .toList();
 
       this.data = AsyncValue.success(data);
-
     } catch (e) {
       // 3- Fetch is unsucessfull
       data = AsyncValue.error(e);
