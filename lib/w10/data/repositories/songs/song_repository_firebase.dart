@@ -9,6 +9,8 @@ class SongRepositoryFirebase extends SongRepository {
   final String baseUrl =
       'w9-database-bbd01-default-rtdb.asia-southeast1.firebasedatabase.app';
 
+  List<Song>? _cachedSongs;
+
   @override
   Future<void> likeSong(Song song) async {
     final Uri songUri = Uri.https(baseUrl, '/songs/${song.id}.json');
@@ -33,7 +35,11 @@ class SongRepositoryFirebase extends SongRepository {
   }
 
   @override
-  Future<List<Song>> fetchSongs() async {
+  Future<List<Song>> fetchSongs({bool fetch = false}) async {
+    if (!fetch && _cachedSongs != null) {
+      return _cachedSongs!;
+    }
+
     final Uri songsUri = Uri.https(baseUrl, '/songs.json');
 
     final http.Response response = await http.get(songsUri);
@@ -48,12 +54,15 @@ class SongRepositoryFirebase extends SongRepository {
         result.add(SongDto.fromJson(entry.key, entry.value));
       }
 
+      _cachedSongs = result;
+
       return result;
-    } else {  
+    } else {
       // 2- Throw expcetion if any issue
       throw Exception('Failed to load posts');
     }
   }
+
   @override
   Future<Song?> fetchSongById(String id) async {}
 }

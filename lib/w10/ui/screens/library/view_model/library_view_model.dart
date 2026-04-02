@@ -36,7 +36,7 @@ class LibraryViewModel extends ChangeNotifier {
     fetchSong();
   }
 
-Future<void> likeSong(Song song) async {
+  Future<void> likeSong(Song song) async {
     try {
       await songRepository.likeSong(song);
 
@@ -69,6 +69,38 @@ Future<void> likeSong(Song song) async {
     } catch (e) {
       data = AsyncValue.error(e);
     }
+  }
+
+Future<void> refresh() async {
+    try {
+      data = AsyncValue.loading();
+      notifyListeners();
+
+      List<Song> songs = await songRepository.fetchSongs(
+        fetch: true,
+      ); 
+
+      List<Artist> artists = await artistRepository.fetchArtists(
+        fetch: true,
+      ); 
+
+      Map<String, Artist> mapArtist = {
+        for (var artist in artists) artist.id: artist,
+      };
+
+      final result = songs
+          .map(
+            (song) =>
+                LibraryItemData(song: song, artist: mapArtist[song.artistId]!),
+          )
+          .toList();
+
+      data = AsyncValue.success(result);
+    } catch (e) {
+      data = AsyncValue.error(e);
+    }
+
+    notifyListeners();
   }
 
   void fetchSong() async {
